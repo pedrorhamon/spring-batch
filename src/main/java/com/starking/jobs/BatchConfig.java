@@ -1,18 +1,19 @@
 package com.starking.jobs;
 
-import java.util.concurrent.Future;
-
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.transform.FieldSet;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.client.RestTemplate;
+
+import com.starking.jobs.BatchConfig.Pessoa;
 
 /**
  * @author pedroRhamon
@@ -38,10 +39,21 @@ public class BatchConfig {
 				.build();
 	}
 	
-	@Bean
-	public Step importaClientesStep(ItemReader<Pessoa> reader, ItemProcessor<Pessoa, Future<Pessoa>> processor, ItemWriter<Future<Pessoa>> writer) {
-		
-	}
+	  @Bean
+	  public ItemReader<Pessoa> reader() {
+	    return new FlatFileItemReaderBuilder<Pessoa>()
+	        .name("pessoasFileReader")
+	        .resource(new FileSystemResource("files/pessoas.csv"))
+	        .delimited()
+	        .names("nome", "email", "dataNascimento", "idade", "id")
+	        .addComment("--")
+	        .fieldSetMapper((FieldSet fieldSet) -> {
+	          return new Pessoa(fieldSet.readLong("id"),
+	              fieldSet.readString("nome"), fieldSet.readString("email"),
+	              fieldSet.readString("dataNascimento"), fieldSet.readInt("idade"), null);
+	        })
+	        .build();
+	  }
 	
 	
 	record Pessoa(Long id, String nome, String email, String dataNascimento, Integer idade, String thumbnail) {
