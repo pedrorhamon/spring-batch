@@ -66,9 +66,21 @@ public class BatchConfig {
 	    asyncProcessor.setDelegate(itemProcessor);
 	    return asyncProcessor;
 	  }
+	  
+	  @Bean
+	  public ItemProcessor<Pessoa, Pessoa> processor() {
+	    return pessoa -> {
+	      var uri = "https://jsonplaceholder.typicode.com/photos/" + pessoa.id();
+	      var photo = restTemplate.getForObject(uri, Photo.class);
+	      var newPessoa = new Pessoa(pessoa.id(), pessoa.nome(), pessoa.email(), pessoa.dataNascimento(), pessoa.idade(),
+	          photo.thumbnailUrl());
+	      return newPessoa;
+	    };
+	  }
 	
 	
-	record Pessoa(Long id, String nome, String email, String dataNascimento, Integer idade, String thumbnail) {
-	}
+	record Pessoa(Long id, String nome, String email, String dataNascimento, Integer idade, String thumbnail) {}
+	
+	record Photo(Long id, String thumbnailUrl) {}
 
 }
