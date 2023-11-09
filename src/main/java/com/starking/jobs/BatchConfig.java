@@ -6,6 +6,7 @@ import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.integration.async.AsyncItemProcessor;
 import org.springframework.batch.integration.async.AsyncItemWriter;
 import org.springframework.batch.item.ItemProcessor;
@@ -28,22 +29,33 @@ import org.springframework.web.client.RestTemplate;
 public class BatchConfig {
 
 	private JobRepository jobRepository;
-	private PlatformTransactionManager transactionManager;
-	private RestTemplate restTemplate;
+	  private PlatformTransactionManager transactionManager;
+	  private RestTemplate restTemplate;
 
-	public BatchConfig(JobRepository jobRepository, PlatformTransactionManager transactionManager, RestTemplate restTemplate) {
-		this.jobRepository = jobRepository;
-		this.transactionManager = transactionManager;
-		this.restTemplate = restTemplate;
-	}
-	
-	@Bean
-	public Job importarClientesJob(JobRepository jobRepository, Step importaClientesStep) {
-		return new JobBuilder("importaClientStep", jobRepository)
-				.start(importaClientesStep)
-				.build();
-	}
-	
+	  public BatchConfig(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+	    this.jobRepository = jobRepository;
+	    this.transactionManager = transactionManager;
+	    this.restTemplate = new RestTemplate();
+	  }
+
+	  @Bean
+	  public Job importarClientesJob(JobRepository jobRepository, Step importarClientesStep) {
+	    return new JobBuilder("importarClientesJob", jobRepository)
+	        .start(importarClientesStep)
+	        .build();
+	  }
+
+	  @Bean
+	  public Step importarClienteStep(ItemReader<Pessoa> reader, ItemProcessor<Pessoa, Future<Pessoa>> processor,
+	      ItemWriter<Future<Pessoa>> writer) {
+	    return new StepBuilder("importarClienteStep", jobRepository)
+	        .<Pessoa, Future<Pessoa>>chunk(1000, transactionManager)
+	        .reader(reader)
+	        .processor(processor)
+	        .writer(writer)
+	        .build();
+	  }
+
 	  @Bean
 	  public ItemReader<Pessoa> reader() {
 	    return new FlatFileItemReaderBuilder<Pessoa>()
@@ -59,7 +71,7 @@ public class BatchConfig {
 	        })
 	        .build();
 	  }
-	  
+
 	  @Bean
 	  public ItemProcessor<Pessoa, Future<Pessoa>> asyncProcessor(ItemProcessor<Pessoa, Pessoa> itemProcessor,
 	      TaskExecutor taskExecutor) {
@@ -68,7 +80,7 @@ public class BatchConfig {
 	    asyncProcessor.setDelegate(itemProcessor);
 	    return asyncProcessor;
 	  }
-	  
+
 	  @Bean
 	  public ItemProcessor<Pessoa, Pessoa> processor() {
 	    return pessoa -> {
@@ -79,21 +91,21 @@ public class BatchConfig {
 	      return newPessoa;
 	    };
 	  }
-	  
+
 	  @Bean
 	  public ItemWriter<Future<Pessoa>> asyncWriter(ItemWriter<Pessoa> writer) {
 	    var asyncWriter = new AsyncItemWriter<Pessoa>();
 	    asyncWriter.setDelegate(writer);
 	    return asyncWriter;
 	  }
-	  
+
 	  @Bean
 	  public ItemWriter<Pessoa> writer() {
 	    return System.out::println;
 	  }
+
+	}
 	
 	record Pessoa(Long id, String nome, String email, String dataNascimento, Integer idade, String thumbnail) {}
 	
 	record Photo(Long id, String thumbnailUrl) {}
-
-}
