@@ -86,7 +86,11 @@ public class BatchConfig {
 	    asyncWriter.setDelegate(writer);
 	    return asyncWriter;
 	  }
-	
+	  
+	  @Bean
+	  public ItemWriter<Pessoa> writer() {
+	    return System.out::println;
+	  }
 	
 	record Pessoa(Long id, String nome, String email, String dataNascimento, Integer idade, String thumbnail) {}
 	
