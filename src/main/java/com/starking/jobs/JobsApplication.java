@@ -11,5 +11,4 @@ public class JobsApplication {
 		ConfigurableApplicationContext run = SpringApplication.run(JobsApplication.class, args);
 		run.close();
 	}
-
 }
