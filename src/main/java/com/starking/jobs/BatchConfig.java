@@ -103,7 +103,6 @@ public class BatchConfig {
 	  public ItemWriter<Pessoa> writer() {
 	    return System.out::println;
 	  }
-
 	}
 	
 	record Pessoa(Long id, String nome, String email, String dataNascimento, Integer idade, String thumbnail) {}
