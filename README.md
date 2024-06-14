@@ -1,3 +1,3 @@
 # spring-batch
 
-java 17
+java 21
